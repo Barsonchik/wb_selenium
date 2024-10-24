@@ -7,20 +7,22 @@ from selenium.webdriver.common.keys import Keys
 import time
 import re
 import csv
+import json  # Import the json module
 
 # Set up Chrome options
 options = Options()
 options.add_argument('start-maximized')
+options.add_argument('--disable-gpu')  # Disable GPU hardware acceleration
+options.add_argument('--no-sandbox')  # Bypass OS security model
+options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
 
-# Initialize the first browser instance
+# Initialize the first browser instance for collecting URLs
 driver = webdriver.Chrome(options=options)
 wait = WebDriverWait(driver, 10)
 
-# Open the Wildberries website
+# Open the Wildberries website and search for books
 driver.get('https://www.wildberries.ru')
 time.sleep(4)
-
-# Search for books on machine learning
 search_input = wait.until(EC.presence_of_element_located((By.ID, "searchInput")))
 search_input.send_keys('книги фридрих дюрренматт')
 search_input.send_keys(Keys.ENTER)
@@ -40,15 +42,13 @@ while True:
             time.sleep(2)
         except Exception as e:
             print(f"Error while waiting for cards: {e}")
-            break  # Exit the inner loop if there's an error
+            break
 
-    # Extract URLs from the current page
     if cards:
         url_list.extend([card.find_element(By.XPATH, './div/a').get_attribute('href') for card in cards])
     else:
         print("No cards found on the page.")
 
-    # Check for the "next" button and click if available
     try:
         next_button = driver.find_element(By.CLASS_NAME, 'pagination-next')
         next_button.click()
@@ -118,6 +118,10 @@ with open('c:/GB/wb/data.csv', 'w', newline='', encoding='utf-8') as f:
     writer.writerows([[book['name'], book['price'], book['brend'], book['url'], book.get('article'), 
                        book.get('author'), book.get('genre'), book.get('language'), 
                        book.get('year'), book.get('cover')] for book in books_list])
+
+# Save the collected data to a JSON file
+with open('c:/GB/wb/data.json', 'w', encoding='utf-8') as json_file:
+    json.dump(books_list, json_file, ensure_ascii=False, indent=4)
 
 # Close the browser instances
 driver.quit()
